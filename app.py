@@ -11,7 +11,11 @@ import json
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+import os
+app = Flask(__name__, 
+            static_folder='static',
+            template_folder='templates')
+
 
 # Load environment variables
 load_dotenv()
