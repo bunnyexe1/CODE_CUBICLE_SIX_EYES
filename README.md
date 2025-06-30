@@ -63,7 +63,7 @@ git clone [<your-repository-url>](https://github.com/bunnyexe1/CODE_CUBICLE_SIX_
 ```
 🐍 Step 2: Create a Virtual Environment
 Windows:
-
+```bash
 bash
 Copy
 Edit
@@ -76,6 +76,7 @@ Copy
 Edit
 python3 -m venv venv
 source venv/bin/activate
+```
 📦 Step 3: Install Dependencies
 Create a requirements.txt file with:
 
@@ -88,16 +89,19 @@ pandas
 google-generativeai
 python-dotenv
 Then run:
-
+```bash
 bash
 Copy
 Edit
 pip install -r requirements.txt
+```
 🌐 Step 4: Install Playwright Browsers
 bash
 Copy
 Edit
+```bash
 playwright install
+```
 🔑 Step 5: Set Up Environment Variables
 Create a .env file in the root directory:
 
@@ -106,10 +110,12 @@ Copy
 Edit
 GOOGLE_API_KEY="your_google_api_key_here"
 🚀 How to Run the Application
+```bash
 bash
 Copy
 Edit
 python app.py
+```
 The server will run at:
 📍 http://127.0.0.1:5000
 
