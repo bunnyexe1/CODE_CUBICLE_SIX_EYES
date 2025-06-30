@@ -60,6 +60,7 @@ The final output is a list of real businesses with tailored job opportunities �
 ### 📥 Step 1: Clone the Repository
 ```bash
 git clone [<your-repository-url>](https://github.com/bunnyexe1/CODE_CUBICLE_SIX_EYES)
+```
 🐍 Step 2: Create a Virtual Environment
 Windows:
 
