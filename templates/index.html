@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Suggestions Chat</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="chat-container" id="chatContainer">
+        <div class="message assistant-message">
+            <h3>👋 Welcome to Job Suggestions Chat!</h3>
+            <p>I can help you find job opportunities based on your interests. Just tell me:</p>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>What type of business you're interested in</li>
+                <li>Your preferred location (optional)</li>
+            </ul>
+            <p><strong>Examples:</strong></p>
+            <div class="example-prompts">
+                <span class="example-prompt" onclick="fillExample('tech company in Bangalore')">tech company in Bangalore</span>
+                <span class="example-prompt" onclick="fillExample('restaurant in Mumbai')">restaurant in Mumbai</span>
+                <span class="example-prompt" onclick="fillExample('retail store in Delhi')">retail store in Delhi</span>
+                <span class="example-prompt" onclick="fillExample('hospital in Chennai')">hospital in Chennai</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-container">
+        <div class="input-wrapper">
+            <input type="text" id="userInput" placeholder="e.g., 'tech company in Bangalore' or 'restaurants in Mumbai'" autocomplete="off">
+            <input type="number" id="totalInput" value="5" min="1" max="50" placeholder="Number of results">
+            <button id="sendButton">Send</button>
+            <button id="omnidimButton">Open Omnidim Widget</button> <!-- Added button -->
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chatContainer');
+        const userInput = document.getElementById('userInput');
+        const totalInput = document.getElementById('totalInput');
+        const sendButton = document.getElementById('sendButton');
+        const omnidimButton = document.getElementById('omnidimButton'); // Added reference
+
+        function fillExample(text) {
+            userInput.value = text;
+            userInput.focus();
+        }
+
+        function addMessage(message, isUser = false, isError = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'} ${isError ? 'error-message' : ''}`;
+            
+            if (typeof message === 'string') {
+                messageDiv.textContent = message;
+            } else {
+                messageDiv.appendChild(message);
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function addLoadingIndicator() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message assistant-message loading';
+            loadingDiv.innerHTML = `
+                <span>Finding job opportunities for you...</span>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            `;
+            chatContainer.appendChild(loadingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return loadingDiv;
+        }
+
+        function formatResults(data) {
+            const container = document.createElement('div');
+            container.innerHTML = `
+                <h3>💼 Job Opportunities in ${data.business_type} - ${data.location}</h3>
+                <p>Found ${data.results.length} businesses:</p>
+            `;
+            
+            const resultsContainer = document.createElement('div');
+            resultsContainer.className = 'job-suggestions';
+            
+            data.results.forEach((result, index) => {
+                let jobs;
+                try {
+                    const jobSuggestions = result['Job Suggestions'] || '[]';
+                    jobs = JSON.parse(jobSuggestions.replace(/'/g, '"')); // Handle single quotes if present
+                    if (!Array.isArray(jobs)) {
+                        jobs = [jobs]; // Ensure it's an array even if a single object
+                    }
+                } catch (e) {
+                    console.error(`Error parsing job suggestion for ${result['Business Name']}: ${e.message}`);
+                    jobs = [{ error: "Unable to generate job suggestion at this time" }];
+                }
+
+                const jobCard = document.createElement('div');
+                jobCard.className = 'job-card';
+                jobCard.innerHTML = `
+                    <h3 class="job-title">${result['Business Name']}</h3>
+                    <div class="job-details">
+                        <div class="job-info"><strong>📍 Location:</strong> <a href="${result['Location URL']}" target="_blank">View on Google Maps</a></div>
+                        <div class="job-info"><strong>📞 Phone:</strong> ${result['Phone Number'] || 'Not found'}</div>
+                        <div class="job-info"><strong>ℹ️ Description:</strong> ${result['Description'] || 'Not available'}</div>
+                        <h4>💼 Job Suggestions:</h4>
+                        ${jobs.length > 0 ? jobs.map(job => `
+                            <div class="job-details">
+                                <h4 class="job-title">${job.jobTitle || 'Not available'}</h4>
+                                <h4>🎯 Key Responsibilities:</h4>
+                                <ul>${job.keyResponsibilities ? job.keyResponsibilities.map(resp => `<li>${resp}</li>`).join('') : '<li>Not available</li>'}</ul>
+                                <h4>🛠️ Required Skills:</h4>
+                                <ul>${job.requiredSkills ? job.requiredSkills.map(skill => `<li>${skill}</li>`).join('') : '<li>Not available</li>'}</ul>
+                                <div class="job-info"><strong>💰 Salary Range:</strong> ${job.expectedSalaryRange || 'Not available'}</div>
+                                <div class="job-info"><strong>🎁 Benefits:</strong> ${job.benefits || 'Not available'}</div>
+                            </div>
+                        `).join('') : '<p>No job suggestions available</p>'}
+                    </div>
+                `;
+                resultsContainer.appendChild(jobCard);
+            });
+            
+            container.appendChild(resultsContainer);
+            container.innerHTML += `<br><em>💡 Tip: Try different business types or locations for more options!</em>`;
+            return container;
+        }
+
+        async function handleUserInput() {
+            const prompt = userInput.value.trim();
+            let total = parseInt(totalInput.value);
+
+            if (!prompt) {
+                addMessage('Please enter a prompt.', false, true);
+                return;
+            }
+            if (isNaN(total) || total < 1 || total > 50) {
+                addMessage('Please enter a valid number of results (1-50).', false, true);
+                return;
+            }
+
+            addMessage(prompt, true);
+            userInput.value = '';
+            totalInput.value = '5';
+            sendButton.disabled = true;
+            userInput.disabled = true;
+            totalInput.disabled = true;
+
+            const loadingIndicator = addLoadingIndicator();
+
+            try {
+                const response = await fetch('/scrape', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt, total })
+                });
+
+                const data = await response.json();
+                chatContainer.removeChild(loadingIndicator);
+
+                if (data.error) {
+                    addMessage(`Sorry, I encountered an error: ${data.error}`, false, true);
+                } else {
+                    const formattedResults = formatResults(data);
+                    addMessage(formattedResults);
+                }
+            } catch (error) {
+                console.error('Request error:', error);
+                chatContainer.removeChild(loadingIndicator);
+                addMessage('Sorry, there was a network error. Please check your connection and try again.', false, true);
+            } finally {
+                sendButton.disabled = false;
+                userInput.disabled = false;
+                totalInput.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        // Function to trigger Omnidimension widget (adjust based on documentation)
+        function triggerOmnidimWidget() {
+            if (window.Omnidim && typeof window.Omnidim.open === 'function') {
+                window.Omnidim.open(); // Example method; replace with actual API call
+                addMessage('Omnidim widget opened.', false);
+            } else {
+                addMessage('Omnidim widget is not available or not initialized.', false, true);
+                console.error('Omnidim widget API not found.');
+            }
+        }
+
+        sendButton.addEventListener('click', handleUserInput);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !sendButton.disabled) {
+                handleUserInput();
+            }
+        });
+        omnidimButton.addEventListener('click', triggerOmnidimWidget); // Add button event listener
+
+        userInput.focus();
+    </script>
+
+    <!-- Add Omnidimension web widget script -->
+    <script id="omnidimension-web-widget" async src="https://backend.omnidim.io/web_widget.js?secret_key=0437278a9f0d06a7ac8352d4b61339c6"></script>
+</body>
+</html>
